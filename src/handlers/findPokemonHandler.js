@@ -1,40 +1,42 @@
-import dom from "../dom.js";
-import getPokemonData from "../../apis/getPokemon.js";
-import createDom from "../components/createDom.js";
-import data from "../data.js";
-import updatePokemon from "../components/updatePokemon.js";
+import dom from '../dom.js';
+import getPokemonData from '../../apis/getPokemon.js';
+import createDom from '../components/createDom.js';
 
 const findPokemonHandler = async () => {
-  const id = Number(dom.userInput.value);
-  const alreadyExisted = document.getElementById("container");
+    dom.rootDiv.innerHTML = '';
 
-  if (data.pokemonId === id) {
-    dom.errorMessage.remove();
-    return;
-  }
+    const userInput = dom.userInput.value;
 
-  if (Number.isNaN(id) || id <= 0 || id >= 1010) {
-    dom.errorMessage.innerHTML = "Please enter a valid Pokémon ID.";
-    dom.errorMessage.id = "error-message";
-    dom.rootDiv.append(dom.errorMessage);
-    if (alreadyExisted) {
-      alreadyExisted.remove();
+    if (!userInput) {
+        dom.errorMessage.innerText = `Please write id's separated with ','`;
+        dom.rootDiv.append(dom.errorMessage);
+        return;
     }
-    data.pokemonId = null;
-    return;
-  }
 
-  const pokemonData = await getPokemonData(id);
+    let validId = [];
+    const separatedId = userInput.split(',');
 
-  if (!alreadyExisted) {
-    dom.errorMessage.remove();
-    const pokemonDom = createDom(pokemonData);
-    dom.rootDiv.append(pokemonDom);
-  } else {
-    updatePokemon(alreadyExisted, pokemonData);
-  }
+    separatedId.forEach((id) => {
+        if (id > 0 && id < 1010 && !Number.isNaN(id)) {
+            validId.push(id);
+        }
+    });
 
-  data.pokemonId = id;
+    if (validId.length === 0) {
+        dom.errorMessage.innerText = `Please, write correct is's`;
+        dom.rootDiv.append(dom.errorMessage);
+        return;
+    }
+
+    const uniqId = [...new Set(separatedId)];
+
+    const pokemonsPromises = uniqId.map((id) => getPokemonData(id));
+    const pokemonArrayOfPromises = await Promise.all(pokemonsPromises);
+
+    pokemonArrayOfPromises.forEach((pokemonData) => {
+        const pokemonDom = createDom(pokemonData);
+        dom.rootDiv.append(pokemonDom);
+    });
 };
 
 export default findPokemonHandler;
